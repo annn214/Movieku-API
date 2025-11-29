@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrasi - Movieku</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Registrasi <span>Movieku</span></h1>
+    <nav class="top-nav">
+      <a href="/login">Login</a>
+      <a class="active" href="/register">Registrasi</a>
+      <a href="/">Beranda</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Buat Akun</h2>
+      <p class="lead">Isi data di bawah untuk membuat akun baru.</p>
+      <form id="register-form">
+        <div>
+          <label>Nama</label>
+          <input type="text" name="name" required />
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" required />
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit">Registrasi</button>
+      </form>
+      <p id="register-status" class="status">Menunggu aksi...</p>
+      <div class="footer-links">Sudah punya akun? <a href="/login">Login</a></div>
+    </section>
+
+    <section class="section grid-two">
+      <div>
+        <h2>Tips</h2>
+        <p class="helper">Setelah registrasi berhasil, lanjutkan ke halaman login untuk mendapatkan token.</p>
+      </div>
+      <div>
+        <h2>Koneksi Backend</h2>
+        <p id="backend-status" class="status">Memeriksa koneksi...</p>
+        <p class="helper">Registrasi memerlukan backend aktif. Pastikan server berjalan.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { fetchJSON, statusSuccess, statusError, statusInfo, checkBackend } from './common.js';
+
+    const form = document.getElementById('register-form');
+    const statusEl = document.getElementById('register-status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusInfo(statusEl, 'Mengirim permintaan...');
+      const payload = Object.fromEntries(new FormData(form).entries());
+      try {
+        await fetchJSON('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        statusSuccess(statusEl, 'Registrasi berhasil! Silakan login.');
+        form.reset();
+      } catch (err) {
+        statusError(statusEl, err.message);
+      }
+    });
+
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>

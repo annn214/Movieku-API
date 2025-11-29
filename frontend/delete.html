@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hapus Film - Movieku</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Hapus <span>Film</span></h1>
+    <nav class="top-nav">
+      <a href="/">Beranda</a>
+      <a href="/search">Cari</a>
+      <a href="/create">Tambah</a>
+      <a href="/edit">Edit</a>
+      <a class="active" href="/delete">Hapus</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Konfirmasi Penghapusan</h2>
+      <p class="lead">Masukkan ID film yang ingin dihapus. Token diperlukan.</p>
+      <form id="delete-form">
+        <label>ID Film</label>
+        <input type="text" name="id" required />
+        <button type="submit" class="danger">Hapus Film</button>
+      </form>
+      <p id="delete-status" class="status">Menunggu aksi...</p>
+    </section>
+
+    <section class="section grid-two">
+      <div>
+        <h2>Catatan</h2>
+        <p class="helper">Hanya pemilik film yang dapat menghapusnya. Pastikan Anda login dengan akun yang benar.</p>
+      </div>
+      <div>
+        <h2>Koneksi Backend</h2>
+        <p id="backend-status" class="status">Memeriksa koneksi...</p>
+        <p class="helper">Penghapusan memerlukan backend aktif dan token valid.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { fetchJSON, authHeaders, ensureAuth, statusInfo, statusError, statusSuccess, checkBackend } from './common.js';
+
+    const form = document.getElementById('delete-form');
+    const statusEl = document.getElementById('delete-status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth(statusEl)) return;
+      const id = new FormData(form).get('id');
+      statusInfo(statusEl, 'Menghapus film...');
+      try {
+        await fetchJSON(`/api/movies/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        statusSuccess(statusEl, 'Film berhasil dihapus.');
+        form.reset();
+      } catch (err) {
+        statusError(statusEl, err.message);
+      }
+    });
+
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>
