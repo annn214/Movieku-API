@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movieku Console</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Movieku <span>Console</span></h1>
+    <p class="hero">Setiap fitur kini berada di halaman terpisah untuk alur yang lebih jelas.</p>
+    <nav class="top-nav">
+      <a href="/login">Login</a>
+      <a href="/register">Registrasi</a>
+      <a href="/search">Cari Film</a>
+      <a href="/create">Tambah Film</a>
+      <a href="/edit">Edit Film</a>
+      <a href="/delete">Hapus Film</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Panduan Singkat</h2>
+      <p class="lead">Gunakan tautan di atas untuk berpindah antar-halaman sesuai kebutuhan Anda.</p>
+      <ul>
+        <li><strong>Login</strong> untuk mendapatkan token Bearer.</li>
+        <li><strong>Registrasi</strong> untuk membuat akun baru.</li>
+        <li><strong>Cari Film</strong> memuat pencarian, detail, dan rekomendasi.</li>
+        <li><strong>Tambah</strong>, <strong>Edit</strong>, dan <strong>Hapus</strong> fokus pada aksi CRUD tunggal.</li>
+      </ul>
+      <p class="helper">Token disimpan di <code>localStorage</code> dan dipakai otomatis di setiap halaman.</p>
+      <div class="footer-links">Belum ada akun? <a href="/register">Registrasi di sini</a></div>
+    </section>
+
+    <section class="section grid-two">
+      <div>
+        <h2>Status Token</h2>
+        <p id="token-status" class="status">Memeriksa token...</p>
+        <div class="grid-two">
+          <button id="clear-token" class="secondary">Hapus Token</button>
+          <a class="button-link" href="/search">Arahkan ke Dashboard</a>
+        </div>
+      </div>
+      <div>
+        <h2>Koneksi Backend</h2>
+        <p id="backend-status" class="status">Memeriksa koneksi...</p>
+        <p class="helper">Pastikan backend Adonis berjalan di <code>localhost:3333</code> saat diakses langsung.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { getToken, clearToken, statusInfo, statusSuccess, checkBackend } from './common.js';
+
+    const statusEl = document.getElementById('token-status');
+    const token = getToken();
+    if (token) {
+      statusSuccess(statusEl, 'Token tersedia. Anda dapat langsung menggunakan fitur dashboard.');
+    } else {
+      statusInfo(statusEl, 'Token belum ada. Silakan login untuk mendapatkan token.');
+    }
+
+    document.getElementById('clear-token').addEventListener('click', () => {
+      clearToken();
+      statusInfo(statusEl, 'Token dihapus. Silakan login kembali.');
+    });
+
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>

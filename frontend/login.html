@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Movieku</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Login <span>Movieku</span></h1>
+    <nav class="top-nav">
+      <a class="active" href="/login">Login</a>
+      <a href="/register">Registrasi</a>
+      <a href="/">Beranda</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Masuk</h2>
+      <p class="lead">Masukkan email dan password untuk mendapatkan token Bearer.</p>
+      <form id="login-form">
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" required />
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      <p id="login-status" class="status">Menunggu aksi...</p>
+      <div class="footer-links">Belum punya akun? <a href="/register">Registrasi</a></div>
+    </section>
+
+    <section class="section grid-two">
+      <div>
+        <h2>Token Saat Ini</h2>
+        <p id="token-view" class="status">Memeriksa token...</p>
+        <div class="grid-two">
+          <button id="clear-token" class="secondary">Hapus Token</button>
+          <a class="button-link" href="/search">Menuju Dashboard</a>
+        </div>
+      </div>
+      <div>
+        <h2>Koneksi Backend</h2>
+        <p id="backend-status" class="status">Memeriksa koneksi...</p>
+        <p class="helper">Jika gagal, pastikan server Adonis berjalan dan tidak diblokir CORS.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { fetchJSON, setToken, getToken, clearToken, statusSuccess, statusError, statusInfo, checkBackend } from './common.js';
+
+    const form = document.getElementById('login-form');
+    const statusEl = document.getElementById('login-status');
+    const tokenView = document.getElementById('token-view');
+
+    const refreshTokenView = () => {
+      const token = getToken();
+      if (token) {
+        statusSuccess(tokenView, 'Token tersedia dan siap dipakai di halaman lain.');
+      } else {
+        statusInfo(tokenView, 'Belum ada token tersimpan.');
+      }
+    };
+
+    refreshTokenView();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusInfo(statusEl, 'Mengirim permintaan...');
+      const payload = Object.fromEntries(new FormData(form).entries());
+      try {
+        const data = await fetchJSON('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        setToken(data.token?.token || data.token);
+        statusSuccess(statusEl, 'Login berhasil! Token disimpan.');
+        refreshTokenView();
+      } catch (err) {
+        statusError(statusEl, err.message);
+      }
+    });
+
+    document.getElementById('clear-token').addEventListener('click', () => {
+      clearToken();
+      refreshTokenView();
+      statusInfo(statusEl, 'Token dihapus.');
+    });
+
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>

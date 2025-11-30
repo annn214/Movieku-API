@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tambah Film - Movieku</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Tambah <span>Film</span></h1>
+    <nav class="top-nav">
+      <a href="/">Beranda</a>
+      <a class="active" href="/create">Tambah</a>
+      <a href="/search">Cari</a>
+      <a href="/edit">Edit</a>
+      <a href="/delete">Hapus</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Form Tambah</h2>
+      <p class="lead">Pastikan sudah login karena endpoint ini memerlukan token.</p>
+      <form id="create-form">
+        <label>Judul</label>
+        <input type="text" name="title" required />
+        <label>Tahun</label>
+        <input type="number" name="year" min="1900" max="2100" />
+        <label>Genre</label>
+        <input type="text" name="genre" placeholder="Pisahkan dengan koma" />
+        <label>Synopsis</label>
+        <textarea name="synopsis" rows="3"></textarea>
+        <label>Rating (0-10)</label>
+        <input type="number" step="0.1" min="0" max="10" name="rating" />
+        <button type="submit">Simpan Film</button>
+      </form>
+      <p id="create-status" class="status">Menunggu input...</p>
+    </section>
+
+    <section class="section grid-two">
+      <div>
+        <h2>Token</h2>
+        <p class="helper">Token otomatis diambil dari localStorage.</p>
+        <p id="token-status" class="status"></p>
+      </div>
+      <div>
+        <h2>Koneksi Backend</h2>
+        <p id="backend-status" class="status">Memeriksa koneksi...</p>
+        <p class="helper">Endpoint tambah membutuhkan backend aktif.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { fetchJSON, authHeaders, ensureAuth, statusInfo, statusError, statusSuccess, checkBackend } from './common.js';
+
+    const form = document.getElementById('create-form');
+    const statusEl = document.getElementById('create-status');
+    const tokenStatus = document.getElementById('token-status');
+
+    tokenStatus.textContent = authHeaders().Authorization ? 'Token tersedia.' : 'Token tidak ada.';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ensureAuth(tokenStatus)) return;
+      statusInfo(statusEl, 'Menyimpan film...');
+      const payload = Object.fromEntries(new FormData(form).entries());
+      if (payload.genre) payload.genre = payload.genre.split(',').map((g) => g.trim()).filter(Boolean);
+      if (payload.year) payload.year = Number(payload.year);
+      if (payload.rating) payload.rating = Number(payload.rating);
+      try {
+        await fetchJSON('/movies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify(payload),
+        });
+        statusSuccess(statusEl, 'Film berhasil disimpan.');
+        form.reset();
+      } catch (err) {
+        statusError(statusEl, err.message);
+      }
+    });
+
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>

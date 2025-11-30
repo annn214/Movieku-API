@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cari Film - Movieku</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="movieku-api-base" content="" />
+</head>
+<body>
+  <header>
+    <h1>Cari <span>Film</span></h1>
+    <nav class="top-nav">
+      <a href="/">Beranda</a>
+      <a href="/create">Tambah</a>
+      <a href="/edit">Edit</a>
+      <a href="/delete">Hapus</a>
+      <a href="/login">Login</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Pencarian</h2>
+      <p class="lead">Cari film di database Movieku dan lihat rekomendasi TMDb.</p>
+      <form id="search-form">
+        <div class="grid-two">
+          <div>
+            <label>Kata kunci</label>
+            <input type="text" name="q" placeholder="Contoh: Inception" required />
+          </div>
+          <div>
+            <label>Genre (opsional, pisahkan koma)</label>
+            <input type="text" name="genre" placeholder="action,drama" />
+          </div>
+        </div>
+        <div class="grid-two">
+          <div>
+            <label>Halaman</label>
+            <input type="number" name="page" value="1" min="1" />
+          </div>
+          <div>
+            <label>Limit</label>
+            <input type="number" name="limit" value="5" min="1" max="50" />
+          </div>
+        </div>
+        <button type="submit">Cari Film</button>
+      </form>
+      <p id="search-status" class="status">Menunggu pencarian...</p>
+      <div class="movies-grid" id="search-results"></div>
+    </section>
+
+    <section class="section">
+      <h2>Detail Film</h2>
+      <p class="lead">Klik "Lihat detail" atau masukkan ID manual.</p>
+      <form id="detail-form">
+        <label>ID Film</label>
+        <input type="text" name="id" placeholder="ID ObjectId" required />
+        <button type="submit" class="secondary">Muat Detail</button>
+      </form>
+      <p id="detail-status" class="status">Belum ada detail.</p>
+      <div id="detail-container"></div>
+    </section>
+
+    <section class="section">
+      <h2>Saran TMDb</h2>
+      <p class="lead">Hasil TMDb dari pencarian kata kunci terakhir.</p>
+      <div id="tmdb-suggestions" class="movies-grid"></div>
+    </section>
+
+    <section class="section">
+      <h2>Koneksi Backend</h2>
+      <p id="backend-status" class="status">Memeriksa koneksi...</p>
+      <p class="helper">Pencarian membutuhkan akses ke endpoint <code>/api/movies</code>.</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import { fetchJSON, renderMoviesList, renderMovieDetail, statusInfo, statusError, checkBackend } from './common.js';
+
+    const searchForm = document.getElementById('search-form');
+    const resultsEl = document.getElementById('search-results');
+    const searchStatus = document.getElementById('search-status');
+    const detailForm = document.getElementById('detail-form');
+    const detailStatus = document.getElementById('detail-status');
+    const detailContainer = document.getElementById('detail-container');
+    const tmdbEl = document.getElementById('tmdb-suggestions');
+
+    const renderTmdb = (items = []) => {
+      if (!items.length) {
+        tmdbEl.innerHTML = '<p class="muted">Belum ada saran.</p>';
+        return;
+      }
+      tmdbEl.innerHTML = items
+        .map(
+          (m) => `
+          <article class="movie-card">
+            <div class="movie-header">
+              <div>
+                <strong>${m.title}</strong><br />
+                <span class="muted">${m.releaseDate || '-'}</span>
+              </div>
+              <span class="badge">TMDb #${m.tmdbId}</span>
+            </div>
+            ${m.tmdbPoster ? `<img src="${m.tmdbPoster}" alt="Poster" style="width:120px;border-radius:8px;" />` : ''}
+          </article>
+        `
+        )
+        .join('');
+    };
+
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusInfo(searchStatus, 'Memuat hasil...');
+      const params = new URLSearchParams(Object.fromEntries(new FormData(searchForm).entries()));
+      try {
+        const data = await fetchJSON(`/movies?${params.toString()}`);
+        renderMoviesList(resultsEl, data.data || [], (id) => loadDetail(id));
+        renderTmdb(data.tmdb_suggestions || []);
+        statusInfo(searchStatus, `Menampilkan ${data.data?.length || 0} hasil.`);
+      } catch (err) {
+        statusError(searchStatus, err.message);
+      }
+    });
+
+    async function loadDetail(id) {
+      statusInfo(detailStatus, 'Memuat detail...');
+      try {
+        const data = await fetchJSON(`/movies/${id}`);
+        renderMovieDetail(detailContainer, data);
+        statusInfo(detailStatus, 'Detail dimuat.');
+      } catch (err) {
+        statusError(detailStatus, err.message);
+      }
+    }
+
+    detailForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = new FormData(detailForm).get('id');
+      loadDetail(id);
+    });
+
+    renderMovieDetail(detailContainer, null);
+    renderTmdb();
+    checkBackend(document.getElementById('backend-status'));
+  </script>
+</body>
+</html>
